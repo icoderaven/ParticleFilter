@@ -1,12 +1,19 @@
 #pragma once
-
-class Particle{
+#include <math.h>
+#include "Map.h"
+#include <boost/random.hpp>
+#include <boost/random/normal_distribution.hpp>
+class Particle {
 private:
-	float x, y, theta;
-
+	float _x, _y, _theta;
+	Map *_map_ptr;
+	float dist_max;
 public:
-	Particle():x(0.0), y(0.0), theta(0.0){}
-
-	void ApplyMotionModel();
-
+	Particle(float x, float y, float theta, Map *map_ptr) :
+			_x(x), _y(y), _theta(theta), _map_ptr(map_ptr) {
+		dist_max = 300;
+	}
+	void propogate();
+	float evaluate_measurement_probability();
+	float gaussian_spread(float, float);
 };
