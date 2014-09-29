@@ -80,8 +80,8 @@ float Particle::evaluate_measurement_probability() {
 			//Check if ray has hit a wall
 //			std::cout<<"Check! "<<mapX<<", "<<mapY<<" \n";
 			//Bounds check
-			if ((mapX > 0 && mapX < _map_ptr->get_map().cols)
-					&& (mapY > 0 && _map_ptr->get_map().rows)) {
+			if ((mapX >= 0 && mapX < _map_ptr->get_map().cols)
+					&& (mapY >= 0 && mapY < _map_ptr->get_map().rows)) {
 				if (_map_ptr->get_map().at<float>(mapX, mapY) > 0)
 					hit = 1;
 			}
