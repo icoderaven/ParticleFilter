@@ -12,14 +12,18 @@ void Particle::propogate() {
  */
 float Particle::evaluate_measurement_probability() {
 	//Ray trace from current position
+	cv::Mat image;
+	cv::cvtColor(_map_ptr->get_map(), image, CV_GRAY2BGR);
 	//Later do caching
 	float probabilities[180];
 	//For each angle in the local frame,
+	std::cout << "Entering the lair" << _map_ptr->get_map().rows << ","
+			<< _map_ptr->get_map().cols << "\n";
 	for (int i = 0; i < 180; i++) {
 		//move outwards till you intersect an object...
 
 		//This algorithm is apparently called DDA : http://lodev.org/cgtutor/raycasting.html
-
+//		std::cout<<"Entering the angle\n";
 		//Determine ray direction
 		float angle = (_theta + (i - 90.0) * M_PI / 180.0f);
 		float rayDirX = cos(angle);
@@ -61,6 +65,7 @@ float Particle::evaluate_measurement_probability() {
 		}
 
 		//perform DDA
+//		std::cout<<"Starting DDA\n";
 		while (hit == 0) {
 			//jump to next map square, OR in x-direction, OR in y-direction
 			if (sideDistX < sideDistY) {
@@ -73,10 +78,18 @@ float Particle::evaluate_measurement_probability() {
 				side = 1;
 			}
 			//Check if ray has hit a wall
-			if (_map_ptr->get_map().at<float>(mapX, mapY) > 0)
-				hit = 1;
+//			std::cout<<"Check! "<<mapX<<", "<<mapY<<" \n";
+			//Bounds check
+			if ((mapX > 0 && mapX < _map_ptr->get_map().cols)
+					&& (mapY > 0 && _map_ptr->get_map().rows)) {
+				if (_map_ptr->get_map().at<float>(mapX, mapY) > 0)
+					hit = 1;
+			}
+			else{
+				break;
+			}
 		}
-
+//		std::cout<<"DDA done\n i = "<<i<<"\n";
 		//Find the distance
 		double dist;
 		if (hit) {
@@ -89,22 +102,27 @@ float Particle::evaluate_measurement_probability() {
 		//Now construct fancy probability distribution here
 		//@todo: learn these parameters?
 		float z_hit = 1.0;
-		probabilities[i] = z_hit *gaussian_spread(dist, 1.0);
+//		std::cout<<"Assigning values, hold on to sombreros\n";
+		probabilities[i] = z_hit * gaussian_spread(dist, 1.0);
+//		std::cout<<"Survival!\n";
+		//DEBUG:: plotting these lines!!
+		cv::line(image, cv::Point(_x, _y),
+				cv::Point(_x + sideDistX, _y + sideDistY), CV_RGB(255,0,0));
 	}
 	float q = 1.0;
-	for(int i=0;i<180;i++)
-	{
+	for (int i = 0; i < 180; i++) {
 		q *= probabilities[i];
 	}
+	cv::imshow("Debug", image);
+	cv::waitKey(-1);
 	return q;
 }
 
-float Particle::gaussian_spread( float mean_dist, float std_dev)
-{
+float Particle::gaussian_spread(float mean_dist, float std_dev) {
 	boost::mt19937 rng;
 	boost::normal_distribution<> zhit_prob(mean_dist, std_dev);
-	boost::variate_generator<boost::mt19937&,
-	                           boost::normal_distribution<> > var_nor(rng, zhit_prob);
+	boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > var_nor(
+			rng, zhit_prob);
 
 	return var_nor();
 }

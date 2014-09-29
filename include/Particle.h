@@ -3,6 +3,7 @@
 #include "Map.h"
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 class Particle {
 private:
 	float _x, _y, _theta;

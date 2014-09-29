@@ -1,5 +1,6 @@
 #include "Map.h"
 #include "LogReader.h"
+#include "Particle.h"
 
 int main(int argc, char *argv[]) {
 	//Read Map
@@ -21,12 +22,17 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	my_logs._lasers[0].sensed_locations();
-	for (int i = 0; i < my_logs._lasers.size(); i++) {
-		cv::circle(temp,
-				cv::Point(-my_logs._lasers[i].getX(), -my_logs._lasers[i].getY()),
-				1, CV_RGB(255, 0, 0), 1);
-	}
+//	for (int i = 0; i < my_logs._lasers.size(); i++) {
+//		cv::circle(temp,
+//				cv::Point(-my_logs._lasers[i].getX(), -my_logs._lasers[i].getY()),
+//				1, CV_RGB(255, 0, 0), 1);
+//	}
+	cv::circle(temp, cv::Point(410,300), 1, CV_RGB(255, 0,0));
 	cv::imshow("Tracks", temp);
 	cv::waitKey(-1);
+
+	//Test a particle
+	Particle p(410,300,0, &my_map);
+	p.evaluate_measurement_probability();
 	return 1;
 }
