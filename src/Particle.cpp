@@ -172,3 +172,8 @@ float Particle::sample_gaussian(float mean_dist, float std_dev) {
 			dist);
 	return normal();
 }
+
+void Particle::markParticle(cv::Mat *image)
+{
+	cv::circle(*image, cv::Point(_x,_y), 1, CV_RGB(255,0,0));
+}

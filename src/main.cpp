@@ -1,6 +1,7 @@
 #include "Map.h"
 #include "LogReader.h"
 #include "Particle.h"
+#include "MCFilter.h"
 
 int main(int argc, char *argv[]) {
 	//Read Map
@@ -34,5 +35,8 @@ int main(int argc, char *argv[]) {
 	//Test a particle
 	Particle p(410,300,0, &my_map);
 	p.evaluate_measurement_probability(my_logs._lasers[0]);
+
+	MCFilter filter(100);
+	filter.init(&my_map);
 	return 1;
 }

@@ -14,7 +14,8 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		/**
 		 * Sample motion model
 		 */
-
+		propogated_particles[i] = _past_particles[i].propogate(prev_data,
+				sensor_data);
 		/**
 		 * Obtain measurement probability
 		 */
@@ -48,4 +49,43 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		//Sample this index particle again
 		_new_particles[i] = propogated_particles[pos - cdf.begin()];
 	}
+}
+
+void MCFilter::init(Map *map_ptr) {
+	//If this is the first time we're starting the filter, randomly scatter particles
+	//But only scatter them in valid regions
+
+	//Find all points that are not an obstacle
+	cv::Mat possible_locations = map_ptr->get_map();
+	cv::Mat temp;
+	cv::cvtColor(possible_locations, temp, CV_GRAY2BGR);
+//	std::cout<<possible_locations.rows<<"."<<possible_locations.cols<<"\n";
+//	cv::imshow("Valid regions", possible_locations);
+//	cv::waitKey(-1);
+	std::vector<cv::Point> valid_locations;
+
+	for (int i = 0; i < possible_locations.rows; i++) {
+		for (int j = 0; j < possible_locations.cols; j++) {
+			if (possible_locations.at<float>(i, j) == 0) {
+				valid_locations.push_back(cv::Point(j, i));
+			}
+		}
+	}
+	boost::uniform_int<> loc_dist(0, valid_locations.size());
+	boost::uniform_int<> ang_dist(0, 180);//One out of 180 angles
+	boost::mt19937 gen;
+	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_loc(gen,
+			loc_dist);
+	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_ang(gen,
+				ang_dist);
+	//And now sample from these
+	for (int i = 0; i < _nParticles; i++) {
+		int index_loc = uni_loc(), index_ang = uni_ang();
+		cv::Point pt = valid_locations[index_loc];
+		_past_particles[i] = Particle(pt.x, pt.y, index_ang*M_PI/180.0f, map_ptr);
+		_past_particles[i].markParticle(&temp);
+	}
+
+	cv::imshow("Particles", temp);
+	cv::waitKey(-1);
 }

@@ -26,6 +26,7 @@ public:
 	float evaluate_measurement_probability(LaserData sensor_data);
 	float gaussian_prob(float, float, float);
 	float sample_gaussian(float , float );
+	void markParticle(cv::Mat *);
 
 Map* getMapPtr() const {
 	return _map_ptr;
