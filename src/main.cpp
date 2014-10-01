@@ -28,15 +28,20 @@ int main(int argc, char *argv[]) {
 //				cv::Point(-my_logs._lasers[i].getX(), -my_logs._lasers[i].getY()),
 //				1, CV_RGB(255, 0, 0), 1);
 //	}
-	cv::circle(temp, cv::Point(410,300), 1, CV_RGB(255, 0,0));
+	cv::circle(temp, cv::Point(410, 300), 1, CV_RGB(255, 0,0));
 //	cv::imshow("Tracks", temp);
 //	cv::waitKey(-1);
 
-	//Test a particle
-	Particle p(410,300,0, &my_map);
+//Test a particle
+	Particle p(410, 300, 0, &my_map);
 	p.evaluate_measurement_probability(my_logs._lasers[0]);
 
 	MCFilter filter(100);
 	filter.init(&my_map);
+
+	for (int i = 0; i < my_logs._lasers.size()-1; i++) {
+		filter.loop(my_logs._lasers[i], my_logs._lasers[i+1]);
+		filter.show_particles(&my_map);
+	}
 	return 1;
 }

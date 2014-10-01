@@ -47,8 +47,8 @@ float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 	//Later do caching
 	float probabilities[180];
 	//For each angle in the local frame,
-	std::cout << "Entering the lair" << _map_ptr->get_map().rows << ","
-			<< _map_ptr->get_map().cols << "\n";
+//	std::cout << "Entering the lair" << _map_ptr->get_map().rows << ","
+//			<< _map_ptr->get_map().cols << "\n";
 	for (int i = 0; i < 180; i++) {
 		//move outwards till you intersect an object...
 
@@ -120,7 +120,7 @@ float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 				if (_map_ptr->get_map().at<float>(mapY, mapX) > 0.5) //Ugh, indexing!
 					hit = 1;
 			} else {
-				std::cout << "Max Range! " << mapX << ", " << mapY << " \n";
+//				std::cout << "Max Range! " << mapX << ", " << mapY << " \n";
 				break;
 			}
 		}
@@ -141,8 +141,8 @@ float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 		probabilities[i] = z_hit
 				* gaussian_prob(sensor_data.getRanges()[i], dist,
 						_sigma_sensor);
-		std::cout << dist << " = " << probabilities[i] << ", "
-				<< sensor_data.getRanges()[i] << "\n";
+//		std::cout << dist << " = " << probabilities[i] << ", "
+//				<< sensor_data.getRanges()[i] << "\n";
 //		std::cout<<"Survival!\n";
 		//DEBUG:: plotting these lines!!
 		cv::line(image, cv::Point(_x, _y), cv::Point(mapX, mapY),
@@ -153,8 +153,8 @@ float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 		q *= probabilities[i];
 //		std::cout<<"\n"<<probabilities[i];
 	}
-	cv::imshow("Debug", image);
-	cv::waitKey(-1);
+//	cv::imshow("Debug", image);
+//	cv::waitKey(1);
 	std::cout << q << "\n";
 	return q;
 }

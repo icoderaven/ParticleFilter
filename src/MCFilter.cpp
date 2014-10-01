@@ -14,7 +14,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		/**
 		 * Sample motion model
 		 */
-		propogated_particles[i] = _past_particles[i].propogate(prev_data,
+		propogated_particles[i] = _particles[i].propogate(prev_data,
 				sensor_data);
 		/**
 		 * Obtain measurement probability
@@ -47,7 +47,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		std::vector<double>::iterator pos;
 		pos = std::lower_bound(cdf.begin(), cdf.end(), uni());
 		//Sample this index particle again
-		_new_particles[i] = propogated_particles[pos - cdf.begin()];
+		_particles[i] = propogated_particles[pos - cdf.begin()];
 	}
 }
 
@@ -57,8 +57,8 @@ void MCFilter::init(Map *map_ptr) {
 
 	//Find all points that are not an obstacle
 	cv::Mat possible_locations = map_ptr->get_map();
-	cv::Mat temp;
-	cv::cvtColor(possible_locations, temp, CV_GRAY2BGR);
+
+
 //	std::cout<<possible_locations.rows<<"."<<possible_locations.cols<<"\n";
 //	cv::imshow("Valid regions", possible_locations);
 //	cv::waitKey(-1);
@@ -72,20 +72,29 @@ void MCFilter::init(Map *map_ptr) {
 		}
 	}
 	boost::uniform_int<> loc_dist(0, valid_locations.size());
-	boost::uniform_int<> ang_dist(0, 180);//One out of 180 angles
+	boost::uniform_int<> ang_dist(0, 180);	//One out of 180 angles
 	boost::mt19937 gen;
-	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_loc(gen,
-			loc_dist);
-	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_ang(gen,
-				ang_dist);
+	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_loc(
+			gen, loc_dist);
+	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_ang(
+			gen, ang_dist);
 	//And now sample from these
 	for (int i = 0; i < _nParticles; i++) {
 		int index_loc = uni_loc(), index_ang = uni_ang();
 		cv::Point pt = valid_locations[index_loc];
-		_past_particles[i] = Particle(pt.x, pt.y, index_ang*M_PI/180.0f, map_ptr);
-		_past_particles[i].markParticle(&temp);
-	}
+		_particles[i] = Particle(pt.x, pt.y, index_ang * M_PI / 180.0f,
+				map_ptr);
 
+	}
+	show_particles(map_ptr);
+}
+
+void MCFilter::show_particles(Map* map_ptr) {
+	cv::Mat temp;
+	cv::cvtColor(map_ptr->get_map(), temp, CV_GRAY2BGR);
+	for (int i = 0; i < _nParticles; i++) {
+		_particles[i].markParticle(&temp);
+	}
 	cv::imshow("Particles", temp);
 	cv::waitKey(-1);
 }
