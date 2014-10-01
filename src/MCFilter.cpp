@@ -1,6 +1,6 @@
 #include "MCFilter.h"
 
-void MCFilter::loop(LaserData sensor_data) {
+void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	double max_weight = -1;
 	boost::uniform_real<> dist(0, 1);
 	boost::mt19937 gen;

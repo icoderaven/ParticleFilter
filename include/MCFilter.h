@@ -20,6 +20,6 @@ public:
 		_weights = std::vector<double>(_nParticles, 1.0 / _nParticles);
 	}
 
-	void loop(LaserData);
+	void loop(LaserData, LaserData);
 };
 
