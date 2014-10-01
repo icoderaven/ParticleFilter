@@ -1,4 +1,6 @@
 #include "Particle.h"
+float Particle::_dist_max = 500.0;
+float Particle::_sigma = 1.0;
 
 /**
  * p(x_t | x_{t-1}, u_{t-1})
@@ -10,7 +12,7 @@ void Particle::propogate() {
 /**
  * p( z_t | x_t, m)
  */
-float Particle::evaluate_measurement_probability() {
+float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 	//Ray trace from current position
 	cv::Mat image;
 	cv::cvtColor(_map_ptr->get_map(), image, CV_GRAY2BGR);
@@ -23,12 +25,13 @@ float Particle::evaluate_measurement_probability() {
 		//move outwards till you intersect an object...
 
 		//This algorithm is apparently called DDA : http://lodev.org/cgtutor/raycasting.html
-//		std::cout<<"Entering the angle\n";
+
 		//Determine ray direction
 		float angle = (_theta + (i - 90.0) * M_PI / 180.0f);
 		float rayDirX = cos(angle);
 		float rayDirY = sin(angle);
 
+//		std::cout<<"Entering the angle "<<angle*180.0f/M_PI<<"\n";
 		//which box of the map we're in
 		int mapX = int(_x);
 		int mapY = int(_y);
@@ -77,15 +80,20 @@ float Particle::evaluate_measurement_probability() {
 				mapY += stepY;
 				side = 1;
 			}
+//			cv::circle(image, cv::Point(mapX, mapY), 1, CV_RGB(0,255,0));
+//			std::cout<<"Check! "<<mapX<<", "<<mapY<<", "<<_map_ptr->get_map().at<float>(mapX, mapY)<<" \n";
+//			cv::imshow("Debug", image);
+//			cv::waitKey(1);
 			//Check if ray has hit a wall
 //			std::cout<<"Check! "<<mapX<<", "<<mapY<<" \n";
 			//Bounds check
 			if ((mapX >= 0 && mapX < _map_ptr->get_map().cols)
 					&& (mapY >= 0 && mapY < _map_ptr->get_map().rows)) {
-				if (_map_ptr->get_map().at<float>(mapX, mapY) > 0)
+				if (_map_ptr->get_map().at<float>(mapY, mapX) > 0.5) //Ugh, indexing!
 					hit = 1;
 			}
 			else{
+				std::cout<<"Max Range! "<<mapX<<", "<<mapY<<" \n";
 				break;
 			}
 		}
@@ -93,36 +101,35 @@ float Particle::evaluate_measurement_probability() {
 		//Find the distance
 		double dist;
 		if (hit) {
-			dist = sqrt(sideDistX * sideDistX + sideDistY * sideDistY);
+			dist = sqrt( (mapX-_x) * (mapX-_x) + (mapY-_y) * (mapY-_y));
 		} else {
 			//@todo: specify this in a more smart manner
-			dist = dist_max;
+			dist = _dist_max;
 		}
 
 		//Now construct fancy probability distribution here
 		//@todo: learn these parameters?
 		float z_hit = 1.0;
-//		std::cout<<"Assigning values, hold on to sombreros\n";
-		probabilities[i] = z_hit * gaussian_spread(dist, 1.0);
+		//@todo: Sensor reading goes here
+		probabilities[i] = z_hit * gaussian_prob(sensor_data.getRanges()[i],dist, _sigma);
+		std::cout<<dist<<" = "<<probabilities[i]<<", "<<sensor_data.getRanges()[i]<<"\n";
 //		std::cout<<"Survival!\n";
 		//DEBUG:: plotting these lines!!
 		cv::line(image, cv::Point(_x, _y),
-				cv::Point(_x + sideDistX, _y + sideDistY), CV_RGB(255,0,0));
+				cv::Point(mapX, mapY), CV_RGB(255,0,0));
 	}
 	float q = 1.0;
 	for (int i = 0; i < 180; i++) {
 		q *= probabilities[i];
+//		std::cout<<"\n"<<probabilities[i];
 	}
 	cv::imshow("Debug", image);
 	cv::waitKey(-1);
+	std::cout<<q<<"\n";
 	return q;
 }
 
-float Particle::gaussian_spread(float mean_dist, float std_dev) {
-	boost::mt19937 rng;
-	boost::normal_distribution<> zhit_prob(mean_dist, std_dev);
-	boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > var_nor(
-			rng, zhit_prob);
-
-	return var_nor();
+float Particle::gaussian_prob(float query_val, float mean_dist, float std_dev) {
+	boost::math::normal_distribution<double> zhit_prob(mean_dist, std_dev);
+	return pdf(zhit_prob, query_val) / ( cdf(zhit_prob, _dist_max) - cdf(zhit_prob, 0));
 }

@@ -28,11 +28,11 @@ int main(int argc, char *argv[]) {
 //				1, CV_RGB(255, 0, 0), 1);
 //	}
 	cv::circle(temp, cv::Point(410,300), 1, CV_RGB(255, 0,0));
-	cv::imshow("Tracks", temp);
-	cv::waitKey(-1);
+//	cv::imshow("Tracks", temp);
+//	cv::waitKey(-1);
 
 	//Test a particle
 	Particle p(410,300,0, &my_map);
-	p.evaluate_measurement_probability();
+	p.evaluate_measurement_probability(my_logs._lasers[0]);
 	return 1;
 }
