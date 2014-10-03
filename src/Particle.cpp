@@ -1,6 +1,6 @@
 #include "Particle.h"
 float Particle::_dist_max = 500.0;
-float Particle::_sigma_sensor = 1.0;
+float Particle::_sigma_sensor = 5.0;
 float Particle::_sigma_sample = 1.0;
 float Particle::_alpha[4] = { 1, 1, 1, 1 };
 
@@ -40,12 +40,12 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 /**
  * p( z_t | x_t, m)
  */
-float Particle::evaluate_measurement_probability(LaserData sensor_data) {
+double Particle::evaluate_measurement_probability(LaserData sensor_data) {
 	//Ray trace from current position
 	cv::Mat image;
 	cv::cvtColor(_map_ptr->get_map(), image, CV_GRAY2BGR);
 	//Later do caching
-	float probabilities[180];
+	double probabilities[180];
 	//For each angle in the local frame,
 //	std::cout << "Entering the lair" << _map_ptr->get_map().rows << ","
 //			<< _map_ptr->get_map().cols << "\n";
@@ -148,24 +148,24 @@ float Particle::evaluate_measurement_probability(LaserData sensor_data) {
 		cv::line(image, cv::Point(_x, _y), cv::Point(mapX, mapY),
 				CV_RGB(255,0,0));
 	}
-	float q = 1.0;
+	double q = 0.0;
 	for (int i = 0; i < 180; i++) {
-		q *= probabilities[i];
-//		std::cout<<"\n"<<probabilities[i];
+		q += std::isinf(log(probabilities[i]))? 0: log(probabilities[i]);
+//		std::cout<<"\n"<<log(probabilities[i]);
 	}
 //	cv::imshow("Debug", image);
 //	cv::waitKey(1);
-	std::cout << q << "\n";
-	return q;
+//	std::cout << "\nq = "<<q << "\n";
+	return (q);
 }
 
-float Particle::gaussian_prob(float query_val, float mean_dist, float std_dev) {
+double Particle::gaussian_prob(float query_val, float mean_dist, float std_dev) {
 	boost::math::normal_distribution<double> zhit_prob(mean_dist, std_dev);
 	return pdf(zhit_prob, query_val)
 			/ (cdf(zhit_prob, _dist_max) - cdf(zhit_prob, 0));
 }
 
-float Particle::sample_gaussian(float mean_dist, float std_dev) {
+double Particle::sample_gaussian(float mean_dist, float std_dev) {
 	boost::mt19937 gen;
 	boost::normal_distribution<double> dist(mean_dist, std_dev);
 	boost::variate_generator<boost::mt19937&, boost::normal_distribution<double> > normal(gen,

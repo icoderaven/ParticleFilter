@@ -23,9 +23,9 @@ public:
 		_map_ptr = p.getMapPtr();
 	}
 	Particle propogate(LaserData, LaserData);
-	float evaluate_measurement_probability(LaserData sensor_data);
-	float gaussian_prob(float, float, float);
-	float sample_gaussian(float , float );
+	double evaluate_measurement_probability(LaserData sensor_data);
+	double gaussian_prob(float, float, float);
+	double sample_gaussian(float , float );
 	void markParticle(cv::Mat *);
 
 Map* getMapPtr() const {

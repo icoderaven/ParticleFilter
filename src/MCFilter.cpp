@@ -25,29 +25,34 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		if (_weights[i] >= max_weight) {
 			max_weight = _weights[i];
 		}
-
 	}
 	//Normalize weights
-	for (uint i = 1; i < _nParticles; i++) {
+	std::cout<<"\nWeights = ";
+	for (uint i = 0; i < _nParticles; i++) {
 		_weights[i] /= sum;
+		std::cout<<" "<<_weights[i];
 	}
-
+	std::cout<<"\n";
 	/**
 	 * Now draw M particles from this new weight distribution
+	 * Using the algorithm for a low var
 	 */
 	//Generate a CDF
-	std::vector<double> cdf(_nParticles);
-	cdf[0] = _weights[0];
-	for (uint i = 1; i < _nParticles; i++) {
-		cdf[i] = cdf[i - 1] + _weights[i];
-	}
-	cdf[cdf.size() - 1] = 1.0;
-	for (uint i = 0; i < _nParticles; i++) {
-		//Draw uniform number between 0 and 1
-		std::vector<double>::iterator pos;
-		pos = std::lower_bound(cdf.begin(), cdf.end(), uni());
+	double cdf;
+	cdf = _weights[0];
+	std::cout<<"\n";
+	int i = 0;
+	//Draw uniform number between 0 and 1
+	double r = uni();
+	for (uint m = 0; m < _nParticles; m++) {
+		double U = r + (m )/(_nParticles);
+		while (U>cdf)
+		{
+			i = i+1;
+			cdf = cdf + _weights[i];
+		}
 		//Sample this index particle again
-		_particles[i] = propogated_particles[pos - cdf.begin()];
+		_particles[i] = propogated_particles[i];
 	}
 }
 
