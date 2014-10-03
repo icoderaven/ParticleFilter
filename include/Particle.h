@@ -12,6 +12,7 @@ private:
 	Map *_map_ptr;
 	static float _dist_max,_sigma_sensor, _sigma_sample;
 	static float _alpha[4];
+	boost::mt19937 _gen;
 public:
 	Particle(float x, float y, float theta, Map *map_ptr) :
 			_x(x), _y(y), _theta(theta), _map_ptr(map_ptr) {}
@@ -26,6 +27,7 @@ public:
 	double evaluate_measurement_probability(LaserData sensor_data);
 	double gaussian_prob(float, float, float);
 	double sample_gaussian(float , float );
+	float wrap_pi(float);
 	void markParticle(cv::Mat *);
 
 Map* getMapPtr() const {

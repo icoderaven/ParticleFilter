@@ -12,6 +12,7 @@ private:
 	std::vector<Particle> _particles;
 	std::vector<double> _weights;
 	unsigned int _nParticles;
+	boost::mt19937 _gen;
 public:
 	MCFilter(int nParticles) :
 			_nParticles(nParticles) {

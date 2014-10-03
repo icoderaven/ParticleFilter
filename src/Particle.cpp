@@ -1,8 +1,8 @@
 #include "Particle.h"
 float Particle::_dist_max = 500.0;
 float Particle::_sigma_sensor = 5.0;
-float Particle::_sigma_sample = 1.0;
-float Particle::_alpha[4] = { 1, 1, 1, 1 };
+float Particle::_sigma_sample = 0.5;
+float Particle::_alpha[4] = { 1, .1, 2, 1 };
 
 /**
  * p(x_t | x_{t-1}, u_{t-1})
@@ -10,33 +10,46 @@ float Particle::_alpha[4] = { 1, 1, 1, 1 };
 Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 	//Move forward with some random disturbance
 	float delta_rot1 = atan2(new_data.getY() - prev_data.getY(),
-			new_data.getX() - prev_data.getX());
+			new_data.getX() - prev_data.getX()) - prev_data.getTheta();
 	float delta_trans = sqrt(
 			pow(new_data.getX() - prev_data.getX(), 2)
 					+ pow(new_data.getY() - prev_data.getY(), 2));
 	float delta_rot2 = new_data.getTheta() - prev_data.getTheta() - delta_rot1;
 
-	float sampled_delta_rot1 = delta_rot1
-			- sample_gaussian(
+	delta_rot1 = wrap_pi(delta_rot1);
+	delta_rot2 = wrap_pi(delta_rot2);
+
+	std::cout<<"\n"<<delta_rot1<<", "<<delta_trans<<", "<<delta_rot2<<"\n";
+	float sampled_delta_rot1 = wrap_pi(delta_rot1
+			- (sample_gaussian(
 					_alpha[0] * fabs(delta_rot1) + _alpha[1] * delta_trans,
-					_sigma_sample);
+					_sigma_sample)) );
 	float sampled_delta_trans = delta_trans
 			- sample_gaussian(
 					_alpha[2] * delta_trans + _alpha[3] * fabs(delta_rot1)
 							+ fabs(delta_rot2), _sigma_sample);
-	float sampled_delta_rot2 = delta_rot2
-			- sample_gaussian(
+	float sampled_delta_rot2 = wrap_pi(delta_rot2
+			- (sample_gaussian(
 					_alpha[0] * fabs(delta_rot2) + _alpha[1] * delta_trans,
-					_sigma_sample);
+					_sigma_sample)) );
 
+	std::cout<<sampled_delta_rot1<<", "<<sampled_delta_trans<<", "<<sampled_delta_rot2<<"\n";
 	float x, y, theta;
-	x = _x + sampled_delta_trans * cos(_theta + sampled_delta_rot1);
-	y = _y + sampled_delta_trans * sin(_theta + sampled_delta_rot1);
-	theta = _theta + sampled_delta_rot1 + sampled_delta_rot2;
-
+	x = _x + sampled_delta_trans * cos((_theta + sampled_delta_rot1));
+	y = _y + sampled_delta_trans * sin((_theta + sampled_delta_rot1));
+	theta = wrap_pi(_theta + sampled_delta_rot1 + sampled_delta_rot2);
+	std::cout<<x<<", "<<y<<", "<<theta<<"\n";
 	return Particle(x, y, theta, _map_ptr);
 }
 
+float Particle::wrap_pi(float angle)
+{
+	if (angle>0)
+	        angle = fmod(angle+M_PI, 2.0*M_PI)-M_PI;
+	    else
+	        angle = fmod(angle-M_PI, 2.0*M_PI)+M_PI;
+	return angle;
+}
 /**
  * p( z_t | x_t, m)
  */
@@ -166,9 +179,8 @@ double Particle::gaussian_prob(float query_val, float mean_dist, float std_dev) 
 }
 
 double Particle::sample_gaussian(float mean_dist, float std_dev) {
-	boost::mt19937 gen;
 	boost::normal_distribution<double> dist(mean_dist, std_dev);
-	boost::variate_generator<boost::mt19937&, boost::normal_distribution<double> > normal(gen,
+	boost::variate_generator<boost::mt19937&, boost::normal_distribution<double> > normal(_gen,
 			dist);
 	return normal();
 }

@@ -3,8 +3,7 @@
 void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	double max_weight = -1;
 	boost::uniform_real<> dist(0, 1);
-	boost::mt19937 gen;
-	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > uni(gen,
+	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > uni(_gen,
 			dist);
 
 	std::vector<Particle> propogated_particles;
@@ -35,7 +34,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	std::cout<<"\n";
 	/**
 	 * Now draw M particles from this new weight distribution
-	 * Using the algorithm for a low var
+	 * Using the algorithm for a low var sampler
 	 */
 	//Generate a CDF
 	double cdf;
@@ -62,8 +61,6 @@ void MCFilter::init(Map *map_ptr) {
 
 	//Find all points that are not an obstacle
 	cv::Mat possible_locations = map_ptr->get_map();
-
-
 //	std::cout<<possible_locations.rows<<"."<<possible_locations.cols<<"\n";
 //	cv::imshow("Valid regions", possible_locations);
 //	cv::waitKey(-1);
@@ -78,18 +75,17 @@ void MCFilter::init(Map *map_ptr) {
 	}
 	boost::uniform_int<> loc_dist(0, valid_locations.size());
 	boost::uniform_int<> ang_dist(0, 180);	//One out of 180 angles
-	boost::mt19937 gen;
+
 	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_loc(
-			gen, loc_dist);
+			_gen, loc_dist);
 	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_ang(
-			gen, ang_dist);
+			_gen, ang_dist);
 	//And now sample from these
 	for (int i = 0; i < _nParticles; i++) {
 		int index_loc = uni_loc(), index_ang = uni_ang();
 		cv::Point pt = valid_locations[index_loc];
 		_particles[i] = Particle(pt.x, pt.y, index_ang * M_PI / 180.0f,
 				map_ptr);
-
 	}
 	show_particles(map_ptr);
 }
