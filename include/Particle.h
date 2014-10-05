@@ -6,16 +6,25 @@
 #include <boost/random/normal_distribution.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <boost/math/distributions/normal.hpp>
+
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+
 class Particle {
 private:
 	float _x, _y, _theta;
 	Map *_map_ptr;
 	static float _dist_max,_sigma_sensor, _sigma_sample[3];
 	static float _alpha[4];
+	static float _z_hit, _z_unif;
 	static std::vector< std::vector<float> > _precomputed_distances;
 	boost::mt19937 _gen;
 public:
 	static 	std::vector<cv::Point> valid_locations;
+	static cv::Mat valid_locations_map;
 
 	Particle(float x, float y, float theta, Map *map_ptr) :
 			_x(x), _y(y), _theta(theta), _map_ptr(map_ptr) {}

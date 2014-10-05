@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
 	cv::imshow("Map", temp);
 
-	cv::waitKey(-1);
+//	cv::waitKey(-1);
 	//Read logs
 	LogReader my_logs(
 			"/home/icoderaven/CMU/robostats/lab_1/data/log/robotdata1.log");
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 //		cv::imshow("Particle", temp);
 //		cv::waitKey(-1);
 //	}
-	MCFilter filter(1000, &my_map);
+	MCFilter filter(2, &my_map);
 	filter.init();
 
 	for (unsigned int i = 20; i < my_logs._lasers.size()-1; i++) {

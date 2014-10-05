@@ -14,13 +14,17 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		/**
 		 * Sample motion model
 		 */
-		propogated_particles[i] = _particles[i].propogate(prev_data,
+		Particle propogated = _particles[i].propogate(prev_data,
 				sensor_data);
+		propogated_particles.push_back(propogated);
 		/**
 		 * Obtain measurement probability
 		 */
 		_weights[i] = propogated_particles[i].evaluate_measurement_probability(
 				sensor_data, _nParticles);
+		if (propogated.getX() == -1){
+			_weights[i] = 0;
+		}
 		sum += _weights[i];
 		if (_weights[i] >= max_weight) {
 			max_weight = _weights[i];
