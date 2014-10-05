@@ -214,7 +214,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 			probabilities[i] = _z_hit
 								* gaussian_prob(sensor_data.getRanges()[i], dist,
 										_sigma_sensor);
-			std::cout << dist << " = " << probabilities[i] << "\n";
+//			std::cout << dist << " = " << probabilities[i] << "\n";
 		}
 	}
 	double q = 0.0;
@@ -244,6 +244,7 @@ double Particle::sample_gaussian(float mean_dist, float std_dev) {
 
 void Particle::markParticle(cv::Mat *image) {
 	cv::circle(*image, cv::Point(_x, _y), 1, CV_RGB(255, 0, 0));
+	cv::line(*image, cv::Point(_x, _y), cv::Point(_x + 4*cos(_theta), _y + 4*sin(_theta)), CV_RGB(0,255,0),1);
 }
 
 void Particle::determine_valid_locations(Map * map_ptr) {

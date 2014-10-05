@@ -13,6 +13,7 @@ private:
 	unsigned int _nParticles;
 	boost::mt19937 _gen;
 	Map * _map_ptr;
+
 public:
 	MCFilter(int nParticles, Map *map_ptr) :
 			_nParticles(nParticles), _map_ptr(map_ptr) {
