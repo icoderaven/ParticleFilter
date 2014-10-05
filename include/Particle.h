@@ -24,7 +24,7 @@ public:
 		_map_ptr = p.getMapPtr();
 	}
 	Particle propogate(LaserData, LaserData);
-	double evaluate_measurement_probability(LaserData sensor_data);
+	double evaluate_measurement_probability(LaserData , float );
 	double gaussian_prob(float, float, float);
 	double sample_gaussian(float , float );
 	float wrap_pi(float);

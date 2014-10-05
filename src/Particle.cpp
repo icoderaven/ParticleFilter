@@ -19,7 +19,7 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 	delta_rot1 = wrap_pi(delta_rot1);
 	delta_rot2 = wrap_pi(delta_rot2);
 
-	std::cout<<"\n"<<delta_rot1<<", "<<delta_trans<<", "<<delta_rot2<<"\n";
+//	std::cout<<"\n"<<delta_rot1<<", "<<delta_trans<<", "<<delta_rot2<<"\n";
 	float sampled_delta_rot1 = wrap_pi(delta_rot1
 			- (sample_gaussian(
 					_alpha[0] * fabs(delta_rot1) + _alpha[1] * delta_trans,
@@ -33,12 +33,12 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 					_alpha[0] * fabs(delta_rot2) + _alpha[1] * delta_trans,
 					_sigma_sample)) );
 
-	std::cout<<sampled_delta_rot1<<", "<<sampled_delta_trans<<", "<<sampled_delta_rot2<<"\n";
+//	std::cout<<sampled_delta_rot1<<", "<<sampled_delta_trans<<", "<<sampled_delta_rot2<<"\n";
 	float x, y, theta;
 	x = _x + sampled_delta_trans * cos((_theta + sampled_delta_rot1));
 	y = _y + sampled_delta_trans * sin((_theta + sampled_delta_rot1));
 	theta = wrap_pi(_theta + sampled_delta_rot1 + sampled_delta_rot2);
-	std::cout<<x<<", "<<y<<", "<<theta<<"\n";
+//	std::cout<<x<<", "<<y<<", "<<theta<<"\n";
 	return Particle(x, y, theta, _map_ptr);
 }
 
@@ -53,7 +53,7 @@ float Particle::wrap_pi(float angle)
 /**
  * p( z_t | x_t, m)
  */
-double Particle::evaluate_measurement_probability(LaserData sensor_data) {
+double Particle::evaluate_measurement_probability(LaserData sensor_data, float M) {
 	//Ray trace from current position
 	cv::Mat image;
 	cv::cvtColor(_map_ptr->get_map(), image, CV_GRAY2BGR);
@@ -149,11 +149,11 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data) {
 
 		//Now construct fancy probability distribution here
 		//@todo: learn these parameters?
-		float z_hit = 1.0;
+		float z_hit = 1.0, z_unif = 1.0;
 		//@todo: Sensor reading goes here
 		probabilities[i] = z_hit
 				* gaussian_prob(sensor_data.getRanges()[i], dist,
-						_sigma_sensor);
+						_sigma_sensor) + z_unif*0.1;
 //		std::cout << dist << " = " << probabilities[i] << ", "
 //				<< sensor_data.getRanges()[i] << "\n";
 //		std::cout<<"Survival!\n";
@@ -169,7 +169,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data) {
 //	cv::imshow("Debug", image);
 //	cv::waitKey(1);
 //	std::cout << "\nq = "<<q << "\n";
-	return (q);
+	return exp((1/M)*q);
 }
 
 double Particle::gaussian_prob(float query_val, float mean_dist, float std_dev) {
