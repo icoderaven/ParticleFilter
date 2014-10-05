@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	my_logs._lasers[0].sensed_locations();
+	Particle::determine_valid_locations(&my_map);
 //	for (int i = 0; i < my_logs._lasers.size(); i++) {
 //		cv::circle(temp,
 //				cv::Point(-my_logs._lasers[i].getX(), -my_logs._lasers[i].getY()),
@@ -33,15 +34,21 @@ int main(int argc, char *argv[]) {
 //	cv::waitKey(-1);
 
 //Test a particle
-//	Particle p(410, 300, 0, &my_map);
-//	p.evaluate_measurement_probability(my_logs._lasers[0]);
+//	Particle p(410, 200, 0, &my_map);
+//	p.evaluate_measurement_probability(my_logs._lasers[0], 1);
 //	//Test propogation
 //	p.markParticle(&temp);
-//	for(int i=0;i <100; i++)
-//		p.propogate(my_logs._lasers[100],my_logs._lasers[101]).markParticle(&temp);
-//	cv::imshow("Particle", temp);
-//	cv::waitKey(-1);
-	MCFilter filter(100, &my_map);
+//	for (unsigned int i = 20; i < my_logs._lasers.size() - 1; i++) {
+//		cv::cvtColor(my_map.get_map(), temp, CV_GRAY2BGR);
+//		p.markParticle(&temp);
+//		for (int j = 0; j < 100; j++)
+//			p.propogate(my_logs._lasers[i], my_logs._lasers[i+1]).markParticle(
+//					&temp);
+//		p = p.propogate(my_logs._lasers[i], my_logs._lasers[i+1]);
+//		cv::imshow("Particle", temp);
+//		cv::waitKey(-1);
+//	}
+	MCFilter filter(1000, &my_map);
 	filter.init();
 
 	for (unsigned int i = 20; i < my_logs._lasers.size()-1; i++) {

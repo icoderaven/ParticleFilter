@@ -10,10 +10,13 @@ class Particle {
 private:
 	float _x, _y, _theta;
 	Map *_map_ptr;
-	static float _dist_max,_sigma_sensor, _sigma_sample;
+	static float _dist_max,_sigma_sensor, _sigma_sample[3];
 	static float _alpha[4];
+	static std::vector< std::vector<float> > _precomputed_distances;
 	boost::mt19937 _gen;
 public:
+	static 	std::vector<cv::Point> valid_locations;
+
 	Particle(float x, float y, float theta, Map *map_ptr) :
 			_x(x), _y(y), _theta(theta), _map_ptr(map_ptr) {}
 	Particle(const Particle &p)
@@ -45,4 +48,6 @@ float getX() const {
 float getY() const {
 	return _y;
 }
+
+static void determine_valid_locations(Map*);
 };

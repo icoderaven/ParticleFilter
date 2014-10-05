@@ -27,14 +27,14 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		}
 	}
 
-//	//See the propogated particles
-//	cv::Mat temp;
-//	cv::cvtColor(_map_ptr->get_map(), temp, CV_GRAY2BGR);
-//	for (int i = 0; i < _nParticles; i++) {
-//		cv::circle(temp, cv::Point(propogated_particles[i].getX(),propogated_particles[i].getY()), 1, CV_RGB(0,0,255));
-//	}
-//	cv::imshow("Particles", temp);
-//	cv::waitKey(-1);
+	//See the propogated particles
+	cv::Mat temp;
+	cv::cvtColor(_map_ptr->get_map(), temp, CV_GRAY2BGR);
+	for (int i = 0; i < _nParticles; i++) {
+		cv::circle(temp, cv::Point(propogated_particles[i].getX(),propogated_particles[i].getY()), 1, CV_RGB(0,0,255));
+	}
+	cv::imshow("Particles", temp);
+	cv::waitKey(-1);
 
 	//Normalize weights
 	std::cout << "\nWeights = ";
@@ -72,24 +72,9 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 void MCFilter::init() {
 	//If this is the first time we're starting the filter, randomly scatter particles
 	//But only scatter them in valid regions
-
-	//Find all points that are not an obstacle
-	cv::Mat possible_locations = _map_ptr->get_map();
-//	std::cout<<possible_locations.rows<<"."<<possible_locations.cols<<"\n";
-//	cv::imshow("Valid regions", possible_locations);
-//	cv::waitKey(-1);
-	std::vector<cv::Point> valid_locations;
-
-	for (int i = 0; i < possible_locations.rows; i++) {
-		for (int j = 0; j < possible_locations.cols; j++) {
-			if (possible_locations.at<float>(i, j) == 0) {
-				valid_locations.push_back(cv::Point(j, i));
-			}
-		}
-	}
-	boost::uniform_int<> loc_dist(0, valid_locations.size());
+	boost::uniform_int<> loc_dist(0, Particle::valid_locations.size());
 	//@todo: Try to fix this
-	boost::uniform_int<> ang_dist(0, 180 / 30.0f);	//One out of 180/n angles
+	boost::uniform_int<> ang_dist(0, 180 / 10.0f);	//One out of 180/n angles
 
 	boost::variate_generator<boost::mt19937&, boost::uniform_int<> > uni_loc(
 			_gen, loc_dist);
@@ -98,7 +83,7 @@ void MCFilter::init() {
 	//And now sample from these
 	for (int i = 0; i < _nParticles; i++) {
 		int index_loc = uni_loc(), index_ang = uni_ang();
-		cv::Point pt = valid_locations[index_loc];
+		cv::Point pt = Particle::valid_locations[index_loc];
 		_particles[i] = Particle(pt.x, pt.y, index_ang * M_PI / 180.0f,
 				_map_ptr);
 	}
