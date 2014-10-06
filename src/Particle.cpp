@@ -49,20 +49,30 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 	x = _x + sampled_delta_trans * cos((_theta + sampled_delta_rot1));
 	y = _y + sampled_delta_trans * sin((_theta + sampled_delta_rot1));
 	theta = wrap_pi(_theta + sampled_delta_rot1 + sampled_delta_rot2);
-//	std::cout<<x<<", "<<y<<", "<<theta<<"\n";
+//	std::cout << _x << "::" << x << ", " << _y << "::" << y << ", " << theta
+//			<< "\n";
 
-	//Check if this particle is within the map
-	if(valid_locations_map.at<float>(y, x) == -1)
-	{
-		std::cout<<"Invalid Propogation!!!\n";
+//Check if this particle is within the map
+	try {
+
+		int idx = valid_locations_map.at<float>(y, x);
+		if (idx == -1) {
+//			std::cout << "Invalid Propogation!!!\n";
 //		Particle temp = propogate(prev_data, new_data);
 //		x = temp.getX();
 //		y = temp.getY();
 //		theta = temp.getTheta();
+			x = -1;
+			y = -1;
+			theta = -1;
+		}
+	} catch (...) {
+		std::cout << "My Out of Range error: " << '\n';
 		x = -1;
 		y = -1;
 		theta = -1;
 	}
+
 	return Particle(x, y, theta, _map_ptr);
 }
 
@@ -78,12 +88,12 @@ float Particle::wrap_pi(float angle) {
  */
 double Particle::evaluate_measurement_probability(LaserData sensor_data,
 		float M) {
-	//Ray trace from current position
+//Ray trace from current position
 	cv::Mat image;
 	cv::cvtColor(_map_ptr->get_map(), image, CV_GRAY2BGR);
-	//Later do caching
+//Later do caching
 	double probabilities[180];
-	//For each angle in the local frame,
+//For each angle in the local frame,
 //	std::cout << "Entering the lair" << _map_ptr->get_map().rows << ","
 //			<< _map_ptr->get_map().cols << "\n";
 
@@ -182,7 +192,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 			//@todo: Sensor reading goes here
 			probabilities[i] = _z_hit
 					* gaussian_prob(sensor_data.getRanges()[i], dist,
-							_sigma_sensor);
+							_sigma_sensor) + _z_unif * 1e-4;
 //		std::cout << dist << " = " << probabilities[i] << "\n";
 //				<< sensor_data.getRanges()[i] << "\n";
 //		std::cout<<"Survival!\n";
@@ -190,42 +200,44 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 			cv::line(image, cv::Point(_x, _y), cv::Point(mapX, mapY),
 					CV_RGB(255, 0, 0));
 		}
-		std::cout<<"\n!!!\n";
+		std::cout << "\n!!!\n";
 	} else {
 		//Table lookup!
 		int valid_pt_index = valid_locations_map.at<float>(_y, _x);
+//		std::cout << "\nx = " << _x << ", y = " << _y << ", idx = "
+//				<< valid_pt_index << "\n";
 //		std::cout<<"\nValid pt index"<<valid_pt_index<<"\n";
-		if(valid_pt_index == -1)
-		{
-			std::cout<<"we should not be here!! Invalid sample";
-		}
+		if (valid_pt_index == -1) {
+			std::cout << "we should not be here!! Invalid sample \n";
+			for (int i = 0; i < 180; i++) {
+				probabilities[i] = 1e-4;
+			}
+		} else {
+			for (int i = 0; i < 180; i++) {
+				int lookup_angle_index = (_theta * 180.0f / M_PI + (i - 90));
+				if (lookup_angle_index >= 360)
+					lookup_angle_index -= 360;
+				else if (lookup_angle_index < 0)
+					lookup_angle_index += 360;
 
-		for(int i=0; i<180; i++)
-		{
-			int lookup_angle_index = (_theta *  180.0f / M_PI + (i - 90));
-			if(lookup_angle_index >= 360)
-				lookup_angle_index -= 360;
-			else if(lookup_angle_index <0)
-				lookup_angle_index += 360;
+				double dist =
+						_precomputed_distances.at(valid_pt_index)[lookup_angle_index];
 
-
-			double dist = _precomputed_distances.at(valid_pt_index)[lookup_angle_index];
-
-			probabilities[i] = _z_hit
-								* gaussian_prob(sensor_data.getRanges()[i], dist,
-										_sigma_sensor);
+				probabilities[i] = _z_hit
+						* gaussian_prob(sensor_data.getRanges()[i], dist,
+								_sigma_sensor) + _z_unif * 1e-4;
 //			std::cout << dist << " = " << probabilities[i] << "\n";
+			}
 		}
 	}
 	double q = 0.0;
 	for (int i = 0; i < 180; i++) {
-		q += std::isinf(log(probabilities[i])) ? 0 : log(probabilities[i]);
+		q += std::isinf(log(probabilities[i])) ? -1000 : log(probabilities[i]);
 //		std::cout<<"\n"<<log(probabilities[i]);
 	}
-//	cv::imshow("Debug", image);
 //	cv::waitKey(1);
-//	std::cout << "\nq = "<<q << "\n";
-	return exp((1 / M) * q);
+//	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
+	return exp((1 / 100.0) * q);
 }
 
 double Particle::gaussian_prob(float query_val, float mean_dist,
@@ -244,11 +256,13 @@ double Particle::sample_gaussian(float mean_dist, float std_dev) {
 
 void Particle::markParticle(cv::Mat *image) {
 	cv::circle(*image, cv::Point(_x, _y), 1, CV_RGB(255, 0, 0));
-	cv::line(*image, cv::Point(_x, _y), cv::Point(_x + 4*cos(_theta), _y + 4*sin(_theta)), CV_RGB(0,255,0),1);
+	cv::line(*image, cv::Point(_x, _y),
+			cv::Point(_x + 4 * cos(_theta), _y + 4 * sin(_theta)),
+			CV_RGB(0, 255, 0), 1);
 }
 
 void Particle::determine_valid_locations(Map * map_ptr) {
-	//Find all points that are not an obstacle
+//Find all points that are not an obstacle
 	cv::Mat possible_locations = map_ptr->get_map();
 //	std::cout<<possible_locations.rows<<"."<<possible_locations.cols<<"\n";
 //	cv::imshow("Valid regions", possible_locations);
@@ -266,7 +280,6 @@ void Particle::determine_valid_locations(Map * map_ptr) {
 			}
 		}
 	}
-
 	if (!READ_FILE) {
 		_precomputed_distances.reserve(valid_locations.size() * 360);
 		std::cout << valid_locations.size() << "\n";
@@ -370,17 +383,16 @@ void Particle::determine_valid_locations(Map * map_ptr) {
 		std::cout << "\nWriting to file, " << _precomputed_distances.size()
 				<< "\n";
 		std::ofstream ofs("c:\\dump");
-		    boost::archive::text_oarchive to(ofs);
-		    to << _precomputed_distances;
+		boost::archive::text_oarchive to(ofs);
+		to << _precomputed_distances;
 	} else {
 		//else read
 		_precomputed_distances.clear();
-		    std::ifstream ifs("c:\\dump");
-		    boost::archive::text_iarchive infs(ifs);
-		    infs >> _precomputed_distances;
-		std::cout << "\n Reading from file, " << _precomputed_distances.size() <<", "<<valid_locations.size()
-						<< "\n";
-		std::vector <float> t = _precomputed_distances.at(6);
-		std::cout<< t.size()<<"\nsd";
+		std::ifstream ifs("c:\\dump");
+		boost::archive::text_iarchive infs(ifs);
+		infs >> _precomputed_distances;
+		std::cout << "\n Reading from file, " << _precomputed_distances.size()
+				<< ", " << valid_locations.size() << "\n";
+		std::vector<float> t = _precomputed_distances.at(6);
 	}
 }

@@ -22,16 +22,23 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		 * Sample motion model
 		 */
 		Particle propogated = _particles[i].propogate(prev_data, sensor_data);
-		while (propogated.getX() == -1) {
+		while (propogated.getX() == -1 || _particles[i].getX() == -1) {
 			int index_loc = uni_loc(), index_ang = uni_ang();
-			cv::Point pt = Particle::valid_locations[index_loc];
+			cv::Point pt;
+			try {
+				 pt = Particle::valid_locations[index_loc];
+			}
+
+			catch (const std::out_of_range& oor) {
+				std::cerr << "My 2nd Out of Range error: " << oor.what() << '\n';
+
+			}
 			_particles[i] = Particle(pt.x, pt.y, index_ang * M_PI / 180.0f,
 					_map_ptr);
-			propogated = _particles[i].propogate(prev_data,
-					sensor_data);
+			propogated = _particles[i].propogate(prev_data, sensor_data);
 		}
 		propogated_particles[i] = propogated;
-		old_particles[i] = _particles[i];
+		old_particles.push_back(_particles[i]);
 		/**
 		 * Obtain measurement probability
 		 */
@@ -79,16 +86,16 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 			i = i + 1;
 			cdf = cdf + _weights[i];
 		}
-		//Sample this index particle again
-//		std::cout<<i<<" "<<U<<" " <<cdf<<"; ";
-		_particles[m] = old_particles[i].propogate(prev_data, sensor_data);
+//Sample this index particle again
+//		std::cout<<i<<" "<<U<<" " <<cdf<<", "<<old_particles.size()<<"; \n";
+		_particles[m] = old_particles.at(i).propogate(prev_data, sensor_data);
 	}
 //	std::cout << "\n";
 }
 
 void MCFilter::init() {
-	//If this is the first time we're starting the filter, randomly scatter particles
-	//But only scatter them in valid regions
+//If this is the first time we're starting the filter, randomly scatter particles
+//But only scatter them in valid regions
 	boost::uniform_int<> loc_dist(0, Particle::valid_locations.size());
 	boost::uniform_int<> ang_dist(0, 180);	//One out of 180/n angles
 
@@ -113,5 +120,5 @@ void MCFilter::show_particles(Map* map_ptr) {
 		_particles[i].markParticle(&temp);
 	}
 	cv::imshow("Particles", temp);
-	cv::waitKey(100);
+	cv::waitKey(-1);
 }
