@@ -1,22 +1,22 @@
 #include "Particle.h"
 float Particle::_z_hit = 1e1;
-float Particle::_z_unif = 0.1;
+float Particle::_z_unif = 1;
 float Particle::_dist_max = 500.0;
 float Particle::_sigma_sensor = 5.0;
 float Particle::_sigma_sample[3] = { 0.01, 1, 0.01 };
-float Particle::_alpha[4] = { 0.05, 0, 0.1, 1 };
+float Particle::_alpha[4] = {0,0,0,0};//{ 0.05, 0, 0.1, 1 };
 std::vector<cv::Point> Particle::valid_locations;
 std::vector<std::vector<float> > Particle::_precomputed_distances;
 cv::Mat Particle::valid_locations_map;
 
 #define READ_FILE true
-#define RAY_TRACE false
+#define RAY_TRACE true
 
 Particle Particle::perturb() {
 //	float x, y;
 //	x = sample_gaussian(_x, 0.5);
 //	y = sample_gaussian(_y, 0.5);
-	float theta = sample_gaussian(_theta, 0.1);
+	float theta = sample_gaussian(_theta, 0.2);
 
 	Particle temp(_x, _y, theta, _map_ptr);
 	if (!checkValidity(temp)) {
@@ -76,6 +76,7 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 
 //	std::cout << sampled_delta_rot1 << ", " << sampled_delta_trans << ", "
 //			<< sampled_delta_rot2 << "\n";
+	sampled_delta_trans = delta_trans;
 	float x, y, theta;
 	x = _x + sampled_delta_trans * cos((_theta + sampled_delta_rot1));
 	y = _y + sampled_delta_trans * sin((_theta + sampled_delta_rot1));
@@ -129,14 +130,14 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 //			<< _map_ptr->get_map().cols << "\n";
 
 	if (RAY_TRACE) {
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (int i = 0; i < 180; i++) {
 			//move outwards till you intersect an object...
 
 			//This algorithm is apparently called DDA : http://lodev.org/cgtutor/raycasting.html
 
 			//Determine ray direction
-			float angle = (_theta + (i - 90.0) * M_PI / 180.0f);
+			float angle = (_theta + (90.0-i) * M_PI / 180.0f);
 			float rayDirX = cos(angle);
 			float rayDirY = sin(angle);
 
@@ -224,15 +225,14 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 			//@todo: Sensor reading goes here
 			probabilities[i] = _z_hit
 					* gaussian_prob(sensor_data.getRanges()[i], dist,
-							_sigma_sensor) + _z_unif * 1e-4;
-//		std::cout << dist << " = " << probabilities[i] << "\n";
-//				<< sensor_data.getRanges()[i] << "\n";
+							_sigma_sensor) + _z_unif * 1;
+//		std::cout << dist << " vs " <<  sensor_data.getRanges()[i] <<" p() = "<<probabilities[i] << "\n";
 //		std::cout<<"Survival!\n";
 			//DEBUG:: plotting these lines!!
-			cv::line(image, cv::Point(_x, _y), cv::Point(mapX, mapY),
-					CV_RGB(255, 0, 0));
+//			cv::line(image, cv::Point(_x, _y), cv::Point(mapX, mapY),
+//					CV_RGB(255, 0, 0));
 		}
-		std::cout << "\n!!!\n";
+//		std::cout << "\n!!!\n";
 	} else {
 		//Table lookup!
 		int valid_pt_index = valid_locations_map.at<float>(_y, _x);
@@ -268,6 +268,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 		q += std::isinf(log(probabilities[i])) ? -2000 : log(probabilities[i]);
 //		std::cout<<"\n"<<log(probabilities[i]);
 	}
+//	cv::imshow("Debug", image);
 //	cv::waitKey(1);
 //	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
 	return exp((1 / 100.0) * q);

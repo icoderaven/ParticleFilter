@@ -57,8 +57,9 @@ int Map::read_file() {
 		}
 		i++;
 	}
+
+	cv::flip(_map, _map, 1);
 	_map = _map.t();
-	cv::flip(_map, _map, 0);
 	std::cout<<"\n[MapReader] Done reading map!";
 	return 1;
 }

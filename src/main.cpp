@@ -33,24 +33,26 @@ int main(int argc, char *argv[]) {
 	cv::imshow("Tracks", Particle::valid_locations_map);
 
 //Test a particle
-//	Particle p(399, 384, M_PI/2.0+0.15, &my_map);
-//	p.evaluate_measurement_probability(my_logs._lasers[0], 1);
+//	Particle p(398, 384, M_PI/2.0+0.15, &my_map);
+//	p.evaluate_measurement_probability(my_logs._lasers[20], 1);
 //	//Test propogation
 //	p.markParticle(&temp);
 //	for (unsigned int i = 0; i < my_logs._lasers.size() - 1; i++) {
 //		cv::cvtColor(my_map.get_map(), temp, CV_GRAY2BGR);
 //		p.markParticle(&temp);
-//		for (int j = 0; j < 100; j++)
-//			p.propogate(my_logs._lasers[i], my_logs._lasers[i+1]).markParticle(
-//					&temp);
+////		for (int j = 0; j < 1; j++)
+////			p.propogate(my_logs._lasers[i], my_logs._lasers[i+1]).markParticle(
+////					&temp);
 //		p = p.propogate(my_logs._lasers[i], my_logs._lasers[i+1]);
+//		p.markParticle(&temp);
 //		cv::imshow("Particle", temp);
+//		p.evaluate_measurement_probability(my_logs._lasers[i], 1);
 //		cv::waitKey(-1);
 //	}
 	MCFilter filter(1000, &my_map);
 	filter.init();
 
-	for (unsigned int i = 20; i < my_logs._lasers.size()-1; i++) {
+	for (unsigned int i = 0; i < my_logs._lasers.size()-1; i++) {
 		filter.loop(my_logs._lasers[i], my_logs._lasers[i+1]);
 		filter.show_particles(&my_map);
 	}
