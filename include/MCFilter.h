@@ -23,6 +23,6 @@ public:
 	}
 	void init();
 	void loop(LaserData, LaserData);
-	void show_particles(Map *);
+	void show_particles(Map* map_ptr, bool save = false, int seq = 0);
 };
 

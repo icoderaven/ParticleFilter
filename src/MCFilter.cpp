@@ -3,8 +3,8 @@
 void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	double max_weight = -1;
 	boost::uniform_real<> dist(0, 1.0 / _nParticles);
-	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > uni(Map::_gen,
-			dist);
+	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > uni(
+			Map::_gen, dist);
 	boost::uniform_int<> loc_dist(0, Particle::valid_locations.size());
 	boost::uniform_int<> ang_dist(0, 180);	//One out of 180/n angles
 
@@ -18,7 +18,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	old_particles.resize(_nParticles, _particles[0]);
 	double sum = 0.0;
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (uint i = 0; i < _nParticles; i++) {
 		/**
 		 * Sample motion model
@@ -44,13 +44,12 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 		/**
 		 * Obtain measurement probability
 		 */
-		if(propogated.getX() == -1 || _particles[i].getX() == -1)
-		{
+		if (propogated.getX() == -1 || _particles[i].getX() == -1) {
 			_weights[i] = 0.0;
-		}
-		else{
-		_weights[i] = propogated_particles[i].evaluate_measurement_probability(
-				sensor_data, _nParticles);
+		} else {
+			_weights[i] =
+					propogated_particles[i].evaluate_measurement_probability(
+							sensor_data, _nParticles);
 		}
 		sum += _weights[i];
 		if (_weights[i] >= max_weight) {
@@ -86,7 +85,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	//Draw uniform number between 0 and 1
 //	std::cout<<"\nResampling...";
 	double r = uni();
-	int last_index =-1;
+	int last_index = -1;
 //	std::cout << "r = "<<r<<" c ="<<cdf<<"\n";
 	for (uint m = 0; m < _nParticles; m++) {
 		double U = r + (m) / (float) (_nParticles);
@@ -97,10 +96,9 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 //Sample this index particle again
 //		std::cout<<i<<" "<<U<<" " <<cdf<<", "<<old_particles.size()<<", "<<propogated_particles.size()<<"; \n";
 //		_particles[m] = old_particles.at(i).propogate(prev_data, sensor_data);
-		if(last_index == i){
-		_particles[m] = propogated_particles.at(i).perturb();
-		}
-		else{
+		if (last_index == i) {
+			_particles[m] = propogated_particles.at(i).perturb();
+		} else {
 			_particles[m] = propogated_particles.at(i);
 		}
 		last_index = i;
@@ -128,12 +126,21 @@ void MCFilter::init() {
 	show_particles(_map_ptr);
 }
 
-void MCFilter::show_particles(Map* map_ptr) {
-	cv::Mat temp;
-	cv::cvtColor(map_ptr->get_map(), temp, CV_GRAY2BGR);
+void MCFilter::show_particles(Map* map_ptr, bool save , int seq) {
+	cv::Mat temp(map_ptr->get_map().size(), CV_8UC3);
+	cv::cvtColor(map_ptr->get_map(), temp, CV_GRAY2RGB);
+	temp *=255;
 	for (int i = 0; i < _nParticles; i++) {
 		_particles[i].markParticle(&temp);
 	}
 	cv::imshow("Particles", temp);
+	std::vector<int> compression_params;
+	    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+	    compression_params.push_back(3);
+	if (save) {
+		std::ostringstream s;
+		s << "/home/icoderaven/temp/img_" << seq << ".png";
+		cv::imwrite(s.str(), temp,compression_params);
+	}
 	cv::waitKey(100);
 }

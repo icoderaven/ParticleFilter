@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
 	for (unsigned int i = 0; i < my_logs._lasers.size()-1; i++) {
 		filter.loop(my_logs._lasers[i], my_logs._lasers[i+1]);
-		filter.show_particles(&my_map);
+		filter.show_particles(&my_map, true, i);
 	}
 	return 1;
 }
