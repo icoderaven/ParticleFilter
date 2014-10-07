@@ -1,5 +1,5 @@
 #include "Particle.h"
-float Particle::_z_hit = 1e-8;
+float Particle::_z_hit = 1e1;
 float Particle::_z_unif = 0.1;
 float Particle::_dist_max = 500.0;
 float Particle::_sigma_sensor = 5.0;
@@ -246,7 +246,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 			}
 		} else {
 #pragma omp parallel for
-			for (int i = 0; i < 180; i += 2) {
+			for (int i = 0; i < 180; i ++) {
 				int lookup_angle_index = (_theta * 180.0f / M_PI + (i - 90));
 				if (lookup_angle_index >= 360)
 					lookup_angle_index -= 360;
@@ -269,15 +269,15 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 //		std::cout<<"\n"<<log(probabilities[i]);
 	}
 //	cv::waitKey(1);
-	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
+//	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
 	return exp((1 / 100.0) * q);
 }
 
 double Particle::gaussian_prob(float query_val, float mean_dist,
 		float std_dev) {
 	boost::math::normal_distribution<double> zhit_prob(mean_dist, std_dev);
-	return pdf(zhit_prob, query_val)
-			/ (cdf(zhit_prob, _dist_max) - cdf(zhit_prob, 0));
+	return pdf(zhit_prob, query_val);
+			// / (cdf(zhit_prob, _dist_max) - cdf(zhit_prob, 0));
 }
 
 double Particle::sample_gaussian(float mean_dist, float std_dev) {

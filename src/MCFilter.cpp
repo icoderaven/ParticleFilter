@@ -86,6 +86,7 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 	//Draw uniform number between 0 and 1
 //	std::cout<<"\nResampling...";
 	double r = uni();
+	int last_index =-1;
 //	std::cout << "r = "<<r<<" c ="<<cdf<<"\n";
 	for (uint m = 0; m < _nParticles; m++) {
 		double U = r + (m) / (float) (_nParticles);
@@ -96,7 +97,13 @@ void MCFilter::loop(LaserData prev_data, LaserData sensor_data) {
 //Sample this index particle again
 //		std::cout<<i<<" "<<U<<" " <<cdf<<", "<<old_particles.size()<<", "<<propogated_particles.size()<<"; \n";
 //		_particles[m] = old_particles.at(i).propogate(prev_data, sensor_data);
+		if(last_index == i){
 		_particles[m] = propogated_particles.at(i).perturb();
+		}
+		else{
+			_particles[m] = propogated_particles.at(i);
+		}
+		last_index = i;
 	}
 //	std::cout << "\n";
 }

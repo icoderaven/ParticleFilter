@@ -10,6 +10,7 @@ int LogReader::read_file() {
 
 	std::string line;
 	std::cout << "\n[LogReader] Running through the file...";
+	float max_range = 0;
 	while (std::getline(in, line)) {
 		std::istringstream iss(line);
 		char val;
@@ -26,6 +27,11 @@ int LogReader::read_file() {
 			//Now read in the ranges
 			for (int i = 0; i < 180; i++) {
 				iss >> ranges[i];
+				ranges[i] /= 10.0;//Since we work in decimeters!!!!!!!!!!
+				if (ranges[i] > max_range)
+				{
+					max_range = ranges[i];
+				}
 			}
 			iss >> val[6];
 			_lasers.push_back(
@@ -39,6 +45,7 @@ int LogReader::read_file() {
 	std::cout << "\n[LogReader] Done reading log!";
 	std::cout << "\nOdometry logs: " << _odoms.size() << " Laser logs: "
 			<< _lasers.size() << "\n";
+	std::cout << "max range is "<<max_range<< "\n";
 	return 1;
 }
 
