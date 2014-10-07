@@ -1,6 +1,6 @@
 #include "Particle.h"
-float Particle::_z_hit = 1.0;
-float Particle::_z_unif = 1.0;
+float Particle::_z_hit = 1e-8;
+float Particle::_z_unif = 0.1;
 float Particle::_dist_max = 500.0;
 float Particle::_sigma_sensor = 5.0;
 float Particle::_sigma_sample[3] = { 0.01, 1, 0.01 };
@@ -11,6 +11,36 @@ cv::Mat Particle::valid_locations_map;
 
 #define READ_FILE true
 #define RAY_TRACE false
+
+Particle Particle::perturb() {
+//	float x, y;
+//	x = sample_gaussian(_x, 0.5);
+//	y = sample_gaussian(_y, 0.5);
+	float theta = sample_gaussian(_theta, 0.1);
+
+	Particle temp(_x, _y, theta, _map_ptr);
+	if (!checkValidity(temp)) {
+		//assuming that we don't get an ill-conditioned particle
+		return perturb();
+	} else
+		return temp;
+}
+
+bool Particle::checkValidity(Particle p) {
+	try {
+		int idx = valid_locations_map.at<float>(p.getY(), p.getX());
+		if (idx == -1)
+			return false;
+		else
+			return true;
+	} catch (...) {
+		std::cout << "Requested particle was funny " << p.getX() << ", "
+				<< p.getY() << '\n';
+		return false;
+	}
+
+}
+
 /**
  * p(x_t | x_{t-1}, u_{t-1})
  */
@@ -18,9 +48,10 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 	//Move forward with some random disturbance
 	float delta_rot1 = atan2(new_data.getY() - prev_data.getY(),
 			new_data.getX() - prev_data.getX()) - prev_data.getTheta();
-	float delta_trans = sqrt(
-			pow(new_data.getX() - prev_data.getX(), 2)
-					+ pow(new_data.getY() - prev_data.getY(), 2));
+	float delta_trans = 0.1
+			* sqrt(
+					pow(new_data.getX() - prev_data.getX(), 2)
+							+ pow(new_data.getY() - prev_data.getY(), 2));
 	float delta_rot2 = new_data.getTheta() - prev_data.getTheta() - delta_rot1;
 
 	delta_rot1 = wrap_pi(delta_rot1);
@@ -48,7 +79,7 @@ Particle Particle::propogate(LaserData prev_data, LaserData new_data) {
 	float x, y, theta;
 	x = _x + sampled_delta_trans * cos((_theta + sampled_delta_rot1));
 	y = _y + sampled_delta_trans * sin((_theta + sampled_delta_rot1));
-	theta = wrap_pi(_theta + sampled_delta_rot1 + sampled_delta_rot2);
+	theta = wrap_pi(_theta - sampled_delta_rot1 - sampled_delta_rot2);
 //	std::cout << _x << "::" << x << ", " << _y << "::" << y << ", " << theta
 //			<< "\n";
 
@@ -98,6 +129,7 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 //			<< _map_ptr->get_map().cols << "\n";
 
 	if (RAY_TRACE) {
+#pragma omp parallel for
 		for (int i = 0; i < 180; i++) {
 			//move outwards till you intersect an object...
 
@@ -213,7 +245,8 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 				probabilities[i] = 1e-4;
 			}
 		} else {
-			for (int i = 0; i < 180; i++) {
+#pragma omp parallel for
+			for (int i = 0; i < 180; i += 2) {
 				int lookup_angle_index = (_theta * 180.0f / M_PI + (i - 90));
 				if (lookup_angle_index >= 360)
 					lookup_angle_index -= 360;
@@ -225,18 +258,18 @@ double Particle::evaluate_measurement_probability(LaserData sensor_data,
 
 				probabilities[i] = _z_hit
 						* gaussian_prob(sensor_data.getRanges()[i], dist,
-								_sigma_sensor) + _z_unif * 1e-4;
+								_sigma_sensor) + _z_unif * 1.0;
 //			std::cout << dist << " = " << probabilities[i] << "\n";
 			}
 		}
 	}
 	double q = 0.0;
 	for (int i = 0; i < 180; i++) {
-		q += std::isinf(log(probabilities[i])) ? -1000 : log(probabilities[i]);
+		q += std::isinf(log(probabilities[i])) ? -2000 : log(probabilities[i]);
 //		std::cout<<"\n"<<log(probabilities[i]);
 	}
 //	cv::waitKey(1);
-//	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
+	std::cout << "x =" << _x << ", y=" << _y << ", q = " << q << "\n";
 	return exp((1 / 100.0) * q);
 }
 
@@ -250,7 +283,7 @@ double Particle::gaussian_prob(float query_val, float mean_dist,
 double Particle::sample_gaussian(float mean_dist, float std_dev) {
 	boost::normal_distribution<double> dist(mean_dist, std_dev);
 	boost::variate_generator<boost::mt19937&, boost::normal_distribution<double> > normal(
-			_gen, dist);
+			Map::_gen, dist);
 	return normal();
 }
 
@@ -273,7 +306,8 @@ void Particle::determine_valid_locations(Map * map_ptr) {
 	int ctr = 0;
 	for (int i = 0; i < possible_locations.rows; i++) {
 		for (int j = 0; j < possible_locations.cols; j++) {
-			if (possible_locations.at<float>(i, j) == 0) {
+			if (possible_locations.at<float>(i, j) <= 0.001
+					&& possible_locations.at<float>(i, j) >= 0) {
 				valid_locations.push_back(cv::Point(j, i));
 				valid_locations_map.at<float>(i, j) = ctr;
 				ctr++;

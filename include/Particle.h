@@ -22,7 +22,6 @@ private:
 	static float _alpha[4];
 	static float _z_hit, _z_unif;
 	static std::vector<std::vector<float> > _precomputed_distances;
-	boost::mt19937 _gen;
 public:
 	static std::vector<cv::Point> valid_locations;
 	static cv::Mat valid_locations_map;
@@ -65,6 +64,10 @@ public:
 	float getY() const {
 		return _y;
 	}
+
+	Particle perturb();
+
+	bool checkValidity(Particle);
 
 	static void determine_valid_locations(Map*);
 };

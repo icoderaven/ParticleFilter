@@ -30,15 +30,14 @@ int main(int argc, char *argv[]) {
 //				1, CV_RGB(255, 0, 0), 1);
 //	}
 //	cv::circle(temp, cv::Point(410, 300), 1, CV_RGB(255, 0,0));
-	cv::imshow("Tracks", temp);
-//	cv::waitKey(-1);
+	cv::imshow("Tracks", Particle::valid_locations_map);
 
 //Test a particle
-//	Particle p(410, 200, 0, &my_map);
+//	Particle p(399, 384, M_PI/2.0+0.15, &my_map);
 //	p.evaluate_measurement_probability(my_logs._lasers[0], 1);
 //	//Test propogation
 //	p.markParticle(&temp);
-//	for (unsigned int i = 20; i < my_logs._lasers.size() - 1; i++) {
+//	for (unsigned int i = 0; i < my_logs._lasers.size() - 1; i++) {
 //		cv::cvtColor(my_map.get_map(), temp, CV_GRAY2BGR);
 //		p.markParticle(&temp);
 //		for (int j = 0; j < 100; j++)

@@ -1,5 +1,5 @@
 #include "Map.h"
-
+boost::mt19937 Map::_gen;
 int Map::read_file() {
 	std::ifstream in(_mapName.c_str());
 	if( !in  )
