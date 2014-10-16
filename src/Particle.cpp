@@ -4,7 +4,7 @@ float Particle::_z_unif = 1;
 float Particle::_dist_max = 500.0;
 float Particle::_sigma_sensor = 5.0;
 float Particle::_sigma_sample[3] = { 0.01, 1, 0.01 };
-float Particle::_alpha[4] = {0,0,0,0};//{ 0.05, 0, 0.1, 1 };
+float Particle::_alpha[4] = { 0.05, 0, 0.1, 1 };//{0,0,0,0};
 std::vector<cv::Point> Particle::valid_locations;
 std::vector<std::vector<float> > Particle::_precomputed_distances;
 cv::Mat Particle::valid_locations_map;

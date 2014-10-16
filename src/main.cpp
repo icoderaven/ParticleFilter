@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 //	cv::waitKey(-1);
 	//Read logs
 	LogReader my_logs(
-			"/home/icoderaven/CMU/robostats/lab_1/data/log/robotdata1.log");
+			"/home/icoderaven/CMU/robostats/lab_1/data/log/robotdata2.log");
 	if (!my_logs.read_file()) {
 		return 0;
 	}
